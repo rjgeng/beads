@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 
 	"github.com/steveyegge/beads/internal/utils"
@@ -23,15 +25,25 @@ import (
 // parseSearchLabelFilter for search's), so the refusal covers the
 // proxied-server frontend without being written twice.
 //
-// Still out of scope, and deliberately: --label-pattern and --label-regex are
-// the same class of silently-empty filter but a different shape (a single
-// string, matched rather than compared), so they are not routed through here.
+// Pattern and regular-expression filters use the string-specific helper below
+// because their values are matched rather than normalized into a label list.
 func rejectEmptyLabelFilter(cmd *cobra.Command, flagName string, raw []string) error {
 	if !cmd.Flags().Changed(flagName) {
 		return nil
 	}
 	if len(utils.NormalizeLabels(raw)) == 0 {
 		return HandleErrorRespectJSON("--%s was supplied but contains no usable label", flagName)
+	}
+	return nil
+}
+
+// rejectEmptyLabelMatchFilter rejects a pattern or regular-expression flag
+// that was explicitly supplied without a usable value. Unlike label-list
+// filters, these values are intentionally left otherwise unchanged for their
+// downstream matcher.
+func rejectEmptyLabelMatchFilter(cmd *cobra.Command, flagName, raw string) error {
+	if cmd.Flags().Changed(flagName) && strings.TrimSpace(raw) == "" {
+		return HandleErrorRespectJSON("--%s was supplied but is empty", flagName)
 	}
 	return nil
 }

@@ -82,6 +82,12 @@ func gatherListInput(cmd *cobra.Command) (listInput, error) {
 	}
 	in.LabelPattern, _ = cmd.Flags().GetString("label-pattern")
 	in.LabelRegex, _ = cmd.Flags().GetString("label-regex")
+	if err := rejectEmptyLabelMatchFilter(cmd, "label-pattern", in.LabelPattern); err != nil {
+		return in, err
+	}
+	if err := rejectEmptyLabelMatchFilter(cmd, "label-regex", in.LabelRegex); err != nil {
+		return in, err
+	}
 	in.TitleSearch, _ = cmd.Flags().GetString("title")
 	in.SpecPrefix, _ = cmd.Flags().GetString("spec")
 	in.IDFilter, _ = cmd.Flags().GetString("id")

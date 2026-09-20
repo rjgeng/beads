@@ -34,10 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   These now fail with `--label was supplied but contains no usable label`.
   Unchanged: a list that merely contains a blank element among real ones
   (`--label "a,,b"`) still filters on the real ones, and omitting the flag
-  still means no filter. **Behavior change to note:** on a workspace with a
+  still means no filter. `bd list` and `bd ready` now also reject explicitly
+  empty `--label-pattern` and `--label-regex` values, and `bd migrate-issues`
+  rejects empty `--label` values while normalizing usable ones. **Behavior
+  change to note:** on a workspace with a
   configured directory label, `bd ready --label "  "` used to fall through to
-  that default and now errors instead. `--label-pattern` and `--label-regex`
-  are a different shape and are not affected.
+  that default and now errors instead.
 
 ## [1.3.0] - 2026-09-15
 

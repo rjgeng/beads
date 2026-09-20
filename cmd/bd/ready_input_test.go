@@ -603,6 +603,32 @@ func TestGatherReadyInputRejectsEmptyLabelFilters(t *testing.T) {
 	}
 }
 
+func TestGatherReadyInputRejectsEmptyLabelMatchFilters(t *testing.T) {
+	pinJSONOutput(t, false)
+
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"pattern_empty", []string{"--label-pattern", ""}, "--label-pattern was supplied but is empty"},
+		{"pattern_whitespace", []string{"--label-pattern", "   "}, "--label-pattern was supplied but is empty"},
+		{"regex_empty", []string{"--label-regex", ""}, "--label-regex was supplied but is empty"},
+		{"regex_whitespace", []string{"--label-regex", "   "}, "--label-regex was supplied but is empty"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := runGatherReadyInput(t, newReadyFlagsCommand(t, tc.args...), nil)
+			if got.err == nil {
+				t.Fatalf("gatherReadyInput(%v) = nil, want an error", tc.args)
+			}
+			shown := got.stdout + got.stderr
+			if !strings.Contains(shown, tc.want) {
+				t.Errorf("expected %q, got output:\n%s", tc.want, shown)
+			}
+		})
+	}
+}
+
 // TestGatherReadyInputToleratesEmptyElementsAmongUsableLabels is the
 // regression half of the empty-label-filter fix: a label list that mixes
 // empty elements with usable ones (e.g. "a,,b") must still filter on the

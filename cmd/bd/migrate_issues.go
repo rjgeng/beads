@@ -10,6 +10,7 @@ import (
 	"github.com/steveyegge/beads/internal/metrics"
 	"github.com/steveyegge/beads/internal/storage"
 	"github.com/steveyegge/beads/internal/types"
+	"github.com/steveyegge/beads/internal/utils"
 )
 
 var migrateIssuesCmd = &cobra.Command{
@@ -57,7 +58,10 @@ Examples:
 		statusStr, _ := cmd.Flags().GetString("status")
 		priorityInt, _ := cmd.Flags().GetInt("priority")
 		typeStr, _ := cmd.Flags().GetString("type")
-		labels, _ := cmd.Flags().GetStringSlice("label")
+		labels, err := parseMigrateIssuesLabels(cmd)
+		if err != nil {
+			return err
+		}
 		ids, _ := cmd.Flags().GetStringSlice("id")
 		idsFile, _ := cmd.Flags().GetString("ids-file")
 		include, _ := cmd.Flags().GetString("include")
@@ -99,6 +103,14 @@ Examples:
 		}
 		return nil
 	},
+}
+
+func parseMigrateIssuesLabels(cmd *cobra.Command) ([]string, error) {
+	labels, _ := cmd.Flags().GetStringSlice("label")
+	if err := rejectEmptyLabelFilter(cmd, "label", labels); err != nil {
+		return nil, err
+	}
+	return utils.NormalizeLabels(labels), nil
 }
 
 type migrateIssuesParams struct {

@@ -94,6 +94,12 @@ func gatherReadyInput(cmd *cobra.Command, resolveCap func(*cobra.Command) (int, 
 	}
 	in.LabelPattern, _ = cmd.Flags().GetString("label-pattern")
 	in.LabelRegex, _ = cmd.Flags().GetString("label-regex")
+	if err := rejectEmptyLabelMatchFilter(cmd, "label-pattern", in.LabelPattern); err != nil {
+		return in, err
+	}
+	if err := rejectEmptyLabelMatchFilter(cmd, "label-regex", in.LabelRegex); err != nil {
+		return in, err
+	}
 	in.IssueType, _ = cmd.Flags().GetString("type")
 	in.ParentID, _ = cmd.Flags().GetString("parent")
 	in.IncludeDeferred, _ = cmd.Flags().GetBool("include-deferred")
