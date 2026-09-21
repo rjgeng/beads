@@ -90,6 +90,45 @@ func TestProxyMaintenanceNestedPathsRefuseBeforeProvider(t *testing.T) {
 	}
 }
 
+func TestProxiedMigrateSchemaRequiresForceBeforeProvider(t *testing.T) {
+	oldJSON := jsonOutput
+	jsonOutput = true
+	t.Cleanup(func() {
+		jsonOutput = oldJSON
+		_ = migrateSchemaCmd.Flags().Set("force", "false")
+	})
+	_ = migrateSchemaCmd.Flags().Set("force", "false")
+
+	out := captureStdout(t, func() error {
+		_ = validateProxyMaintenanceBeforeProvider(migrateSchemaCmd)
+		return nil
+	})
+	var got map[string]any
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("decode refusal %q: %v", out, err)
+	}
+	if got["code"] != "proxy.migrate_schema.requires_force" || got["mutates"] != false {
+		t.Fatalf("refusal = %#v, want stable non-mutating requires-force code", got)
+	}
+}
+
+func TestProxiedMigrateSchemaForceWarnsAndProceeds(t *testing.T) {
+	t.Cleanup(func() { _ = migrateSchemaCmd.Flags().Set("force", "false") })
+	if err := migrateSchemaCmd.Flags().Set("force", "true"); err != nil {
+		t.Fatal(err)
+	}
+	var gateErr error
+	stderr := captureStderr(t, func() {
+		gateErr = validateProxyMaintenanceBeforeProvider(migrateSchemaCmd)
+	})
+	if gateErr != nil {
+		t.Fatalf("forced migrate schema refused: %v", gateErr)
+	}
+	if !strings.Contains(stderr, "close co-resident library clients first") {
+		t.Fatalf("warning = %q, want co-resident-client guidance", stderr)
+	}
+}
+
 func TestProxyFormulaSwarmMergeSlotRefusals(t *testing.T) {
 	for _, path := range []string{"cook", "ship", "swarm create", "swarm list", "merge-slot create", "merge-slot check", "merge-slot acquire", "merge-slot release"} {
 		parts := strings.Split(path, " ")

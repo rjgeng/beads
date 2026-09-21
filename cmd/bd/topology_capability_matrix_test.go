@@ -454,19 +454,24 @@ var capabilityProbes = []probe{
 		},
 	},
 
-	// --- migrate schema: already lifted in 1.3.0 -----------------------------
+	// --- migrate schema: explicit single-migrator override -------------------
 	{
-		// The one family the 1.3.0 release already lifted. It is HONORED
-		// proxied, but reports no applied count — S6 makes it report one.
+		// A proxied-server can have co-resident library clients that do not
+		// participate in the CLI's migration consent handshake. Refuse unless
+		// the operator explicitly accepts that coordination risk with --force.
 		name: "migrate schema",
 		args: []string{"migrate", "schema"},
 		direct: expectation{
 			outcome: outcomeHonored, substr: "Schema", reason: reasonNA,
 		},
 		proxied: expectation{
-			outcome: outcomeDegraded, substr: "reconciled during provider open",
-			knownBad: "proxied migrate schema reports no applied count (design 1.5 / slice S6)",
-			reason:   reasonNA,
+			outcome: outcomeRefusedTyped, code: "proxy.migrate_schema.requires_force",
+			substr: "requires --force", reason: reasonDesign,
+			// migrate schema retains a duplicate local --json flag for
+			// compatibility, so the matrix's root-position spelling is rebound
+			// before this pre-provider gate. The underlying refusal is typed and
+			// its JSON envelope is covered directly in proxy_capability_test.go.
+			allowTextFallback: true,
 		},
 	},
 }

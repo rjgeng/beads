@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -165,6 +166,19 @@ func validateProxyMaintenanceBeforeProvider(cmd *cobra.Command) error {
 	}
 	name := cmd.Name()
 	path := strings.TrimSpace(strings.TrimPrefix(cmd.CommandPath(), cmd.Root().Name()))
+	if path == "migrate schema" {
+		force, _ := cmd.Flags().GetBool("force")
+		if !force {
+			return HandleProxyCapabilityError(&ProxyCapabilityError{
+				Code:     "proxy.migrate_schema.requires_force",
+				Message:  "migrate schema in proxied-server mode requires --force after closing co-resident library clients",
+				ExitCode: 1,
+				Mutates:  false,
+			})
+		}
+		fmt.Fprintln(os.Stderr, "Warning: close co-resident library clients first; forcing schema migration in proxied-server mode")
+		return nil
+	}
 	if name == "compact" {
 		if cmd.Flags().Lookup("dolt") == nil {
 			return nil // root `bd compact` is the Dolt history command
