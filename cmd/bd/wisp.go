@@ -841,6 +841,11 @@ func wispIsAbandoned(now, updatedAt time.Time, ageThreshold time.Duration) bool 
 	return ageThreshold <= 0 || now.Sub(updatedAt) > ageThreshold
 }
 
+// wispGCNow is the clock seam for findAbandonedWisps' age check, swappable in
+// tests. Both gc routes read it, so a test that swaps it must not call
+// t.Parallel().
+var wispGCNow = time.Now
+
 func findAbandonedWisps(ctx context.Context, r molReader, cleanAll bool, ageThreshold time.Duration, excludeTypes []types.IssueType) ([]*types.Issue, error) {
 	ephemeralFlag := true
 	filter := types.IssueFilter{
@@ -867,7 +872,7 @@ func findAbandonedWisps(ctx context.Context, r molReader, cleanAll bool, ageThre
 		return nil, err
 	}
 
-	now := time.Now()
+	now := wispGCNow()
 	var abandoned []*types.Issue
 	for _, issue := range issues {
 		if r.IsInfraTypeCtx(ctx, issue.IssueType) {
